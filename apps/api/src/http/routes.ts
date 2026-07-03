@@ -4,6 +4,7 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import type { AppConfig } from "../config.js";
 import type { Database } from "../db/pool.js";
 import { AuthRepository, type Principal } from "../modules/auth/repository.js";
+import { QuotaRepository } from "../modules/auth/quota-repository.js";
 import type { CatalogRepository } from "../modules/catalog/repository.js";
 import type { RoutedModel } from "../modules/catalog/types.js";
 import { ProviderHealthRepository, type ProviderAttempt } from "../modules/providers/health-repository.js";
@@ -95,6 +96,7 @@ export async function registerRoutes(app: FastifyInstance, dependencies: RouteDe
   const wallets = new WalletRepository(dependencies.db);
   const usageLogs = new UsageRepository(dependencies.db);
   const providerHealth = new ProviderHealthRepository(dependencies.db);
+  const quotas = new QuotaRepository(dependencies.db);
 
   const principalFor = async (request: FastifyRequest, reply: FastifyReply): Promise<Principal | null> => {
     const principal = await auth.authenticate(request.headers.authorization);
@@ -102,7 +104,7 @@ export async function registerRoutes(app: FastifyInstance, dependencies: RouteDe
     return principal;
   };
 
-  app.get("/health", async () => ({ status: "ok", version: "0.5.0" }));
+  app.get("/health", async () => ({ status: "ok", version: "0.6.0" }));
 
   app.get("/v1/models", async (request, reply) => {
     if (!(await principalFor(request, reply))) return;
@@ -179,7 +181,21 @@ export async function registerRoutes(app: FastifyInstance, dependencies: RouteDe
     }
 
     const body = parsed.data;
-    const models = await dependencies.catalog.listEnabled();
+    const rateLimit = await quotas.consumeRateLimit(principal);
+    reply.header("x-ratelimit-limit-requests", String(rateLimit.limit));
+    reply.header("x-ratelimit-remaining-requests", String(rateLimit.remaining));
+    reply.header("x-ratelimit-reset-requests", String(rateLimit.resetEpochSeconds));
+    if (!rateLimit.allowed) {
+      reply.header("retry-after", String(Math.max(1, rateLimit.resetEpochSeconds - Math.floor(Date.now() / 1000))));
+      return reply.code(429).send({
+        error: { message: "API key rate limit exceeded", type: "rate_limit_error" }
+      });
+    }
+
+    const catalogModels = await dependencies.catalog.listEnabled();
+    const models = principal.allowedModels.length
+      ? catalogModels.filter((model) => principal.allowedModels.includes(model.slug))
+      : catalogModels;
     const features = extractTaskFeatures(body.messages, body.tools ?? [], body.routing?.domains ?? []);
     const promptTokensEstimate = features.promptTokens || estimateMessageTokens(body.messages);
     let decision: RouteDecision;
@@ -216,6 +232,19 @@ export async function registerRoutes(app: FastifyInstance, dependencies: RouteDe
     const reservationMicroUsd = Math.max(...candidates.map((candidate) => {
       return calculateCharge(candidate.model, reservationPromptTokens, candidate.tokenBudget).costMicroUsd;
     }), 1);
+    const budget = await quotas.checkBudget(principal, reservationMicroUsd);
+    if (!budget.allowed) {
+      return reply.code(402).send({
+        error: {
+          message: budget.reason === "max_request"
+            ? "Predicted request cost exceeds the API key limit"
+            : "API key monthly budget exceeded",
+          type: "quota_exceeded",
+          limit_usd: budget.limitMicroUsd === null ? null : microUsdToUsd(budget.limitMicroUsd),
+          spent_usd: microUsdToUsd(budget.spentMicroUsd)
+        }
+      });
+    }
     const hasFunds = await wallets.reserve(principal.walletId, requestId, reservationMicroUsd);
     if (!hasFunds) {
       return reply.code(402).send({

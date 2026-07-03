@@ -10,7 +10,13 @@ const userSchema = z.object({
   email: z.string().email(),
   display_name: z.string().min(1).max(120)
 });
-const keySchema = z.object({ name: z.string().min(1).max(120) });
+const keySchema = z.object({
+  name: z.string().min(1).max(120),
+  requests_per_minute: z.number().int().min(1).max(10000).default(60),
+  monthly_budget_usd: z.number().positive().optional(),
+  max_request_usd: z.number().positive().optional(),
+  allowed_models: z.array(z.string().min(1)).max(200).default([])
+});
 const creditSchema = z.object({
   amount_usd: z.number().positive().max(1_000_000),
   reference_id: z.string().min(1).max(200),
@@ -239,9 +245,20 @@ export async function registerAdminRoutes(app: FastifyInstance, config: AppConfi
     if (!params.success || !body.success) return reply.code(400).send({ error: { message: "Invalid request" } });
     const key = generateApiKey();
     const result = await db.query<{ id: string }>(
-      `INSERT INTO api_keys (user_id, name, key_prefix, key_hash)
-       VALUES ($1, $2, $3, $4) RETURNING id`,
-      [params.data.userId, body.data.name, key.prefix, key.hash]
+      `INSERT INTO api_keys (
+         user_id, name, key_prefix, key_hash, requests_per_minute,
+         monthly_budget_micro_usd, max_request_micro_usd, allowed_models
+       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`,
+      [
+        params.data.userId,
+        body.data.name,
+        key.prefix,
+        key.hash,
+        body.data.requests_per_minute,
+        body.data.monthly_budget_usd === undefined ? null : Math.round(body.data.monthly_budget_usd * 1_000_000),
+        body.data.max_request_usd === undefined ? null : Math.round(body.data.max_request_usd * 1_000_000),
+        JSON.stringify(body.data.allowed_models)
+      ]
     );
     return reply.code(201).send({ id: result.rows[0]!.id, api_key: key.plaintext, prefix: key.prefix });
   });
