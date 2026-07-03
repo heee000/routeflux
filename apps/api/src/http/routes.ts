@@ -55,7 +55,7 @@ export async function registerRoutes(app: FastifyInstance, dependencies: RouteDe
     return principal;
   };
 
-  app.get("/health", async () => ({ status: "ok", version: "0.2.0" }));
+  app.get("/health", async () => ({ status: "ok", version: "0.4.0" }));
 
   app.get("/v1/models", async (request, reply) => {
     if (!(await principalFor(request, reply))) return;

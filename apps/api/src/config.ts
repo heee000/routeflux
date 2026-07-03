@@ -1,5 +1,14 @@
 import { z } from "zod";
 
+const optionalText = z.preprocess(
+  (value) => typeof value === "string" && value.trim() === "" ? undefined : value,
+  z.string().optional()
+);
+const optionalUrl = z.preprocess(
+  (value) => typeof value === "string" && value.trim() === "" ? undefined : value,
+  z.string().url().optional()
+);
+
 const envSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   HOST: z.string().default("0.0.0.0"),
@@ -9,10 +18,10 @@ const envSchema = z.object({
   REDIS_URL: z.string().default("redis://localhost:6379"),
   MASTER_KEY: z.string().min(1),
   ADMIN_TOKEN: z.string().min(16),
-  BOOTSTRAP_PROVIDER_NAME: z.string().optional(),
-  BOOTSTRAP_PROVIDER_BASE_URL: z.string().url().optional(),
-  BOOTSTRAP_PROVIDER_API_KEY: z.string().optional(),
-  BOOTSTRAP_PROVIDER_MODELS: z.string().optional()
+  BOOTSTRAP_PROVIDER_NAME: optionalText,
+  BOOTSTRAP_PROVIDER_BASE_URL: optionalUrl,
+  BOOTSTRAP_PROVIDER_API_KEY: optionalText,
+  BOOTSTRAP_PROVIDER_MODELS: optionalText
 });
 
 export type AppConfig = z.infer<typeof envSchema>;
@@ -20,4 +29,3 @@ export type AppConfig = z.infer<typeof envSchema>;
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
   return envSchema.parse(env);
 }
-

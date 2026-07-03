@@ -1,6 +1,6 @@
 {
   "name": "routeflux",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "workspaces": [
     "apps/*",
@@ -10,6 +10,7 @@
     "build": "npm run build --workspaces --if-present",
     "dev": "npm run dev --workspace @routeflux/api",
     "dev:api": "npm run dev --workspace @routeflux/api",
+    "dev:web": "npm run dev --workspace @routeflux/web",
     "test": "npm run test --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present",

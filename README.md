@@ -4,7 +4,7 @@ RouteFlux is an OpenAI-compatible model gateway with policy-based routing. It ke
 
 ## Current release
 
-Version 0.3 provides:
+Version 0.4 provides:
 
 - `POST /v1/chat/completions` with streaming passthrough
 - `GET /v1/models`
@@ -24,8 +24,12 @@ Version 0.3 provides:
 - joint model and output-token-budget optimization
 - caller constraints for cost, latency, and minimum predicted quality
 - persisted routing features and candidate scores for later calibration
+- operator console for users, balances, catalog, requests, and ledger activity
+- provider and model configuration through encrypted administration APIs
+- production container builds and same-origin reverse proxy configuration
+- continuous integration for type checking, tests, and production builds
 
-The operator console and data-driven calibration pipeline are planned for the next releases.
+The next release focuses on provider health, fallback execution, and data-driven calibration jobs.
 
 ## Local development
 
@@ -36,7 +40,8 @@ cp .env.example .env
 docker compose up -d
 npm install
 npm run db:migrate
-npm run dev
+npm run dev:api
+npm run dev:web
 ```
 
 Before running the migration, replace `MASTER_KEY` and `ADMIN_TOKEN` in `.env`.
@@ -94,10 +99,21 @@ curl -X POST http://localhost:8080/admin/users/USER_ID/credits \
 
 The API key is returned only when it is created.
 
+## Production containers
+
+Set `MASTER_KEY` and `ADMIN_TOKEN` in `.env`, then run:
+
+```bash
+docker compose --profile app up -d --build
+```
+
+The console is exposed on port `3000`; the API remains available directly on port `8080`. The API container runs pending migrations before it starts accepting traffic.
+
 ## Design notes
 
 - [Architecture](docs/architecture.md)
 - [Routing model](docs/routing.md)
+- [Deployment](docs/deployment.md)
 
 ## License
 

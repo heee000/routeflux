@@ -28,6 +28,43 @@ services:
       timeout: 5s
       retries: 10
 
+  api:
+    profiles: ["app"]
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: 8080
+      DATABASE_URL: postgres://routeflux:routeflux@postgres:5432/routeflux
+      REDIS_URL: redis://redis:6379
+      MASTER_KEY: ${MASTER_KEY:?MASTER_KEY is required}
+      ADMIN_TOKEN: ${ADMIN_TOKEN:?ADMIN_TOKEN is required}
+      BOOTSTRAP_PROVIDER_NAME: ${BOOTSTRAP_PROVIDER_NAME:-}
+      BOOTSTRAP_PROVIDER_BASE_URL: ${BOOTSTRAP_PROVIDER_BASE_URL:-}
+      BOOTSTRAP_PROVIDER_API_KEY: ${BOOTSTRAP_PROVIDER_API_KEY:-}
+      BOOTSTRAP_PROVIDER_MODELS: ${BOOTSTRAP_PROVIDER_MODELS:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+
+  web:
+    profiles: ["app"]
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    depends_on:
+      - api
+    ports:
+      - "3000:80"
+    restart: unless-stopped
+
 volumes:
   routeflux-postgres:
   routeflux-redis:
