@@ -1,0 +1,46 @@
+# RouteFlux
+
+RouteFlux is an OpenAI-compatible model gateway with policy-based routing. It keeps provider integration, routing decisions, and usage accounting separate so each can evolve without changing client applications.
+
+## Current release
+
+Version 0.1 provides:
+
+- `POST /v1/chat/completions` with streaming passthrough
+- `GET /v1/models`
+- generic OpenAI-compatible provider adapters
+- manual, economy, balanced, and quality routing modes
+- capability and context-window filtering
+- encrypted provider credentials at rest
+- PostgreSQL migrations and Docker development services
+
+Wallet accounting and learned routing are planned for the next releases.
+
+## Local development
+
+Requirements: Node.js 20+, Docker, and npm.
+
+```bash
+cp .env.example .env
+docker compose up -d
+npm install
+npm run db:migrate
+npm run dev
+```
+
+Before running the migration, replace `MASTER_KEY` and `ADMIN_TOKEN` in `.env`.
+Set the four `BOOTSTRAP_PROVIDER_*` variables to import an initial provider and a comma-separated model list when the API starts.
+
+## Routing modes
+
+Use a catalog model slug for explicit routing, or one of:
+
+- `auto/economy`
+- `auto/balanced`
+- `auto/quality`
+
+`auto` is an alias for `auto/balanced`.
+
+## License
+
+Copyright retained by the project owner. A distribution license will be selected before the first public release.

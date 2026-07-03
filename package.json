@@ -1,0 +1,22 @@
+{
+  "name": "routeflux",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "dev": "npm run dev --workspace @routeflux/api",
+    "dev:api": "npm run dev --workspace @routeflux/api",
+    "test": "npm run test --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "db:migrate": "npm run db:migrate --workspace @routeflux/api"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
+
