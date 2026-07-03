@@ -7,6 +7,7 @@ import { AuthRepository, type Principal } from "../modules/auth/repository.js";
 import type { CatalogRepository } from "../modules/catalog/repository.js";
 import { callOpenAICompatible } from "../modules/providers/openai-compatible.js";
 import { estimateMessageTokens } from "../modules/routing/estimate.js";
+import { extractTaskFeatures } from "../modules/routing/features.js";
 import { route } from "../modules/routing/router.js";
 import { createUsageMeter, usageFromJson, type TokenUsage } from "../modules/usage/metering.js";
 import { UsageRepository } from "../modules/usage/repository.js";
@@ -105,7 +106,8 @@ export async function registerRoutes(app: FastifyInstance, dependencies: RouteDe
 
     const body = parsed.data;
     const models = await dependencies.catalog.listEnabled();
-    const promptTokensEstimate = estimateMessageTokens(body.messages);
+    const features = extractTaskFeatures(body.messages, body.tools ?? [], body.routing?.domains ?? []);
+    const promptTokensEstimate = features.promptTokens || estimateMessageTokens(body.messages);
     let decision;
     try {
       decision = route(models, {
@@ -116,7 +118,14 @@ export async function registerRoutes(app: FastifyInstance, dependencies: RouteDe
           : {}),
         requiresTools: !!body.tools?.length,
         requiresVision: hasVision(body.messages),
-        requiresJson: body.response_format?.type === "json_object"
+        requiresJson: body.response_format?.type === "json_object",
+        features,
+        policy: {
+          maxCostUsd: body.routing?.max_cost_usd,
+          maxLatencyMs: body.routing?.max_latency_ms,
+          minQuality: body.routing?.min_quality,
+          tokenBudget: body.routing?.token_budget
+        }
       });
     } catch (error) {
       return reply.code(400).send({
@@ -147,6 +156,12 @@ export async function registerRoutes(app: FastifyInstance, dependencies: RouteDe
     reply.header("x-request-id", requestId);
     reply.header("x-routeflux-model", decision.selected.slug);
     reply.header("x-routeflux-mode", decision.mode);
+    reply.header("x-routeflux-domain", decision.features.primaryDomain);
+    reply.header("x-routeflux-difficulty", decision.features.difficulty.toFixed(4));
+    reply.header("x-routeflux-token-budget", String(decision.maxOutputTokens));
+    if (body.routing?.trace) {
+      reply.header("x-routeflux-predicted-quality", decision.predictedQuality.toFixed(5));
+    }
 
     let finalized = false;
     const finalizeSuccess = async (tokens: TokenUsage): Promise<void> => {
@@ -181,8 +196,9 @@ export async function registerRoutes(app: FastifyInstance, dependencies: RouteDe
     });
 
     try {
+      const { routing: _routing, ...providerRequestBody } = body;
       const upstreamBody: Record<string, unknown> = {
-        ...body,
+        ...providerRequestBody,
         max_tokens: decision.maxOutputTokens,
         ...(body.stream ? { stream_options: { include_usage: true } } : {})
       };

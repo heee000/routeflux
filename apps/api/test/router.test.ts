@@ -73,5 +73,83 @@ describe("route", () => {
     });
     expect(decision.selected.slug).toBe("vision");
   });
-});
 
+  it("uses domain similarity when quality and price are comparable", () => {
+    const coding = model({
+      slug: "coding-specialist",
+      domains: { coding: 1 },
+      metadata: { qualityScore: 0.72, difficultyCapacity: 0.85, latencyMs: 1000 }
+    });
+    const general = model({
+      slug: "general-model",
+      domains: { general: 1 },
+      metadata: { qualityScore: 0.72, difficultyCapacity: 0.85, latencyMs: 1000 }
+    });
+    const decision = route([general, coding], {
+      requestedModel: "auto/quality",
+      promptTokensEstimate: 500,
+      requiresTools: false,
+      requiresVision: false,
+      requiresJson: false,
+      features: {
+        promptTokens: 500,
+        textTokens: 480,
+        domainVector: { coding: 1 },
+        primaryDomain: "coding",
+        difficulty: 0.65,
+        predictedOutputTokens: 1000,
+        signals: ["code"]
+      }
+    });
+    expect(decision.selected.slug).toBe("coding-specialist");
+    expect(decision.ranked[0]!.domainSimilarity).toBe(1);
+  });
+
+  it("jointly chooses a smaller token budget in economy mode", () => {
+    const candidate = model({
+      slug: "curve-model",
+      outputPricePerMillion: 20,
+      metadata: { qualityScore: 0.8, difficultyCapacity: 0.9, latencyMs: 1000 }
+    });
+    const features = {
+      promptTokens: 300,
+      textTokens: 280,
+      domainVector: { general: 1 },
+      primaryDomain: "general",
+      difficulty: 0.5,
+      predictedOutputTokens: 1200,
+      signals: []
+    };
+    const economy = route([candidate], {
+      requestedModel: "auto/economy",
+      promptTokensEstimate: 300,
+      requiresTools: false,
+      requiresVision: false,
+      requiresJson: false,
+      features
+    });
+    const quality = route([candidate], {
+      requestedModel: "auto/quality",
+      promptTokensEstimate: 300,
+      requiresTools: false,
+      requiresVision: false,
+      requiresJson: false,
+      features
+    });
+    expect(economy.maxOutputTokens).toBeLessThan(quality.maxOutputTokens);
+    expect(quality.maxOutputTokens).toBe(1200);
+  });
+
+  it("enforces caller cost constraints", () => {
+    const candidate = model({ slug: "expensive", inputPricePerMillion: 100, outputPricePerMillion: 200 });
+    expect(() => route([candidate], {
+      requestedModel: "auto",
+      promptTokensEstimate: 1000,
+      maxOutputTokens: 1000,
+      requiresTools: false,
+      requiresVision: false,
+      requiresJson: false,
+      policy: { maxCostUsd: 0.01 }
+    })).toThrow("No model and token budget");
+  });
+});

@@ -18,6 +18,13 @@ export const chatCompletionSchema = z.object({
   max_tokens: z.number().int().positive().optional(),
   max_completion_tokens: z.number().int().positive().optional(),
   tools: z.array(z.unknown()).optional(),
-  response_format: z.object({ type: z.string() }).passthrough().optional()
+  response_format: z.object({ type: z.string() }).passthrough().optional(),
+  routing: z.object({
+    max_cost_usd: z.number().positive().optional(),
+    max_latency_ms: z.number().int().positive().optional(),
+    min_quality: z.number().min(0).max(1).optional(),
+    domains: z.array(z.string().min(1)).max(8).optional(),
+    token_budget: z.union([z.literal("dynamic"), z.number().int().positive()]).optional(),
+    trace: z.boolean().optional()
+  }).optional()
 }).passthrough();
-

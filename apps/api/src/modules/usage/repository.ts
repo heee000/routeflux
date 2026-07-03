@@ -10,8 +10,10 @@ export class UsageRepository {
     await this.db.query(
       `INSERT INTO request_logs (
          id, user_id, api_key_id, requested_model, selected_model_id,
-         routing_mode, status, route_reason
-       ) VALUES ($1, $2, $3, $4, $5, $6, 'started', $7)`,
+         routing_mode, status, route_reason, primary_domain, difficulty,
+         predicted_output_tokens, selected_token_budget, predicted_quality,
+         candidate_scores
+       ) VALUES ($1, $2, $3, $4, $5, $6, 'started', $7, $8, $9, $10, $11, $12, $13)`,
       [
         requestId,
         principal.userId,
@@ -19,7 +21,21 @@ export class UsageRepository {
         requestedModel,
         decision.selected.id,
         decision.mode,
-        decision.reason
+        decision.reason,
+        decision.features.primaryDomain,
+        decision.features.difficulty,
+        decision.features.predictedOutputTokens,
+        decision.maxOutputTokens,
+        decision.predictedQuality,
+        JSON.stringify(decision.ranked.slice(0, 20).map((candidate) => ({
+          model: candidate.model.slug,
+          token_budget: candidate.tokenBudget,
+          predicted_quality: candidate.predictedQuality,
+          domain_similarity: candidate.domainSimilarity,
+          predicted_cost_usd: candidate.predictedCostUsd,
+          predicted_latency_ms: candidate.predictedLatencyMs,
+          utility: candidate.utility
+        })))
       ]
     );
   }
@@ -42,4 +58,3 @@ export class UsageRepository {
     );
   }
 }
-
