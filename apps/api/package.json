@@ -1,6 +1,6 @@
 {
   "name": "@routeflux/api",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "private": true,
   "type": "module",
   "main": "dist/server.js",
@@ -10,7 +10,8 @@
     "start": "node dist/server.js",
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "db:migrate": "tsx src/db/migrate.ts"
+    "db:migrate": "tsx src/db/migrate.ts",
+    "calibrate": "tsx src/jobs/calibrate.ts"
   },
   "dependencies": {
     "@fastify/cors": "^10.0.1",

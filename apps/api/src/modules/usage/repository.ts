@@ -2,6 +2,7 @@ import type { Database } from "../../db/pool.js";
 import type { Principal } from "../auth/repository.js";
 import type { RouteDecision } from "../routing/types.js";
 import type { UsageCharge } from "../wallet/types.js";
+import type { ProviderAttempt } from "../providers/health-repository.js";
 
 export class UsageRepository {
   constructor(private readonly db: Database) {}
@@ -40,21 +41,66 @@ export class UsageRepository {
     );
   }
 
-  async succeed(requestId: string, usage: UsageCharge, latencyMs: number): Promise<void> {
+  async succeed(
+    requestId: string,
+    usage: UsageCharge,
+    latencyMs: number,
+    selectedModelId: string,
+    attempts: ProviderAttempt[]
+  ): Promise<void> {
     await this.db.query(
       `UPDATE request_logs SET
          status = 'succeeded', prompt_tokens = $1, completion_tokens = $2,
-         cost_micro_usd = $3, latency_ms = $4, completed_at = now()
-       WHERE id = $5`,
-      [usage.promptTokens, usage.completionTokens, usage.costMicroUsd, latencyMs, requestId]
+         cost_micro_usd = $3, latency_ms = $4, selected_model_id = $5,
+         provider_attempts = $6, fallback_count = $7, completed_at = now()
+       WHERE id = $8`,
+      [
+        usage.promptTokens,
+        usage.completionTokens,
+        usage.costMicroUsd,
+        latencyMs,
+        selectedModelId,
+        JSON.stringify(attempts),
+        Math.max(0, attempts.length - 1),
+        requestId
+      ]
     );
   }
 
-  async fail(requestId: string, errorCode: string, latencyMs: number): Promise<void> {
+  async fail(requestId: string, errorCode: string, latencyMs: number, attempts: ProviderAttempt[] = []): Promise<void> {
     await this.db.query(
-      `UPDATE request_logs SET status = 'failed', error_code = $1, latency_ms = $2, completed_at = now()
-       WHERE id = $3`,
-      [errorCode, latencyMs, requestId]
+      `UPDATE request_logs SET status = 'failed', error_code = $1, latency_ms = $2,
+         provider_attempts = $3, fallback_count = $4, completed_at = now()
+       WHERE id = $5`,
+      [errorCode, latencyMs, JSON.stringify(attempts), Math.max(0, attempts.length - 1), requestId]
+    );
+  }
+
+  async failCharged(
+    requestId: string,
+    errorCode: string,
+    usage: UsageCharge,
+    latencyMs: number,
+    selectedModelId: string,
+    attempts: ProviderAttempt[]
+  ): Promise<void> {
+    await this.db.query(
+      `UPDATE request_logs SET status = 'failed', error_code = $1,
+         prompt_tokens = $2, completion_tokens = $3, cost_micro_usd = $4,
+         latency_ms = $5, selected_model_id = $6, provider_attempts = $7,
+         fallback_count = $8, completed_at = now()
+       WHERE id = $9`,
+      [
+        errorCode,
+        usage.promptTokens,
+        usage.completionTokens,
+        usage.costMicroUsd,
+        latencyMs,
+        selectedModelId,
+        JSON.stringify(attempts),
+        Math.max(0, attempts.length - 1),
+        requestId
+      ]
     );
   }
 }

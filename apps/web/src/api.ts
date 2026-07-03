@@ -26,6 +26,12 @@ export interface ProviderRecord {
   enabled: boolean;
   priority: number;
   timeout_ms: number;
+  health_status: "healthy" | "degraded" | "open";
+  consecutive_failures: number | null;
+  success_count: string | null;
+  failure_count: string | null;
+  latency_ema_ms: string | null;
+  circuit_open_until: string | null;
 }
 
 export interface ModelRecord {
@@ -132,4 +138,3 @@ export class ApiClient {
     });
   }
 }
-

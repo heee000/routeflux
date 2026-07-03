@@ -28,3 +28,10 @@ export const chatCompletionSchema = z.object({
     trace: z.boolean().optional()
   }).optional()
 }).passthrough();
+
+export const feedbackSchema = z.object({
+  request_id: z.string().uuid(),
+  score: z.number().min(0).max(1),
+  category: z.string().min(1).max(80).optional(),
+  comment: z.string().max(2000).optional()
+});

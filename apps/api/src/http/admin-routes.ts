@@ -86,8 +86,12 @@ export async function registerAdminRoutes(app: FastifyInstance, config: AppConfi
   app.get("/admin/providers", async (request, reply) => {
     if (!requireAdmin(request, reply, config)) return;
     const result = await db.query(
-      `SELECT id, slug, display_name, base_url, enabled, priority, timeout_ms, created_at, updated_at
-       FROM providers ORDER BY priority, display_name`
+      `SELECT p.id, p.slug, p.display_name, p.base_url, p.enabled, p.priority, p.timeout_ms,
+              p.created_at, p.updated_at, COALESCE(h.status, 'healthy') AS health_status,
+              h.consecutive_failures, h.success_count, h.failure_count, h.latency_ema_ms,
+              h.circuit_open_until, h.last_error
+       FROM providers p LEFT JOIN provider_health h ON h.provider_id = p.id
+       ORDER BY p.priority, p.display_name`
     );
     return { data: result.rows };
   });

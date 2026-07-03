@@ -42,14 +42,16 @@ Model metadata accepts these calibration fields:
 
 The final utility is a mode-specific weighted combination of predicted quality, cost, and latency. Candidate features and scores are stored with every request so the deterministic estimates can later be replaced by fitted predictors without changing the public API.
 
-## Calibration path
+## Calibration
 
-Production calibration should use task-level evaluation labels rather than aggregate model rankings. The intended sequence is:
+Production calibration uses task-level evaluation labels rather than aggregate model rankings. The implemented sequence is:
 
 1. collect representative prompts and observed provider behavior;
 2. score outputs with domain-specific tests, human preference, or controlled judges;
-3. fit per-model quality and output-length curves;
+3. submit scores through `/v1/feedback` and run `npm run calibrate -- -- MINIMUM_SAMPLES`;
 4. validate predicted quality calibration by domain and difficulty bucket;
 5. deploy new predictor versions behind an offline replay gate.
 
 Domain similarity and difficulty are features, not labels. They should influence a model only when evaluation data shows that the model performs differently along those dimensions.
+
+The current job updates base quality, difficulty capacity, and observed domain scores. Every run is recorded in `calibration_runs`. Output-length curve fitting remains separate because it requires prompts with uncapped or high-cap reference generations.

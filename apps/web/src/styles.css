@@ -41,6 +41,17 @@ button.secondary, .table-button { color: #3f4841; background: #eef0eb; border: 1
 .metrics span { display: block; margin-bottom: 14px; color: #707971; font-size: 12px; }
 .metrics strong { font-size: 27px; letter-spacing: -.04em; font-variant-numeric: tabular-nums; }
 .panel { overflow: hidden; }
+.stack { display: grid; gap: 16px; }
+.provider-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; }
+.provider-grid article { padding: 16px; background: #fff; border: 1px solid #e0e3dd; border-radius: 10px; }
+.provider-grid article > div:first-child { display: inline-block; max-width: calc(100% - 80px); }
+.provider-grid article > .status { float: right; }
+.provider-grid strong, .provider-grid small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.provider-grid small { margin-top: 4px; color: #858e86; font-size: 10px; }
+.provider-grid dl { display: flex; gap: 24px; margin: 15px 0 0; padding-top: 12px; border-top: 1px solid #eceee9; }
+.provider-grid dl div { display: grid; gap: 3px; }
+.provider-grid dt { color: #848d85; font-size: 10px; }
+.provider-grid dd { margin: 0; font-size: 12px; font-weight: 650; }
 .panel-title { display: flex; align-items: center; justify-content: space-between; padding: 20px 22px 16px; }
 .panel-title p { margin-bottom: 0; color: #7a827b; font-size: 12px; }
 .table-wrap { width: 100%; overflow-x: auto; }
@@ -54,6 +65,8 @@ td small { margin-top: 3px; color: #8a928b; }
 .status { display: inline-flex; padding: 3px 7px; border-radius: 999px; background: #e8ebe6; color: #657066; font-size: 10px; font-weight: 700; text-transform: uppercase; }
 .status-active, .status-succeeded, .status-credit { color: #326329; background: #e4f4df; }
 .status-failed, .status-suspended { color: #963f35; background: #f9e5e1; }
+.status-open { color: #963f35; background: #f9e5e1; }
+.status-degraded { color: #72551d; background: #f5edda; }
 .status-started, .status-usage { color: #72551d; background: #f5edda; }
 .tags { display: flex; gap: 4px; }
 .tags span { padding: 3px 6px; border-radius: 4px; color: #59645a; background: #eef1eb; font-size: 10px; }

@@ -24,6 +24,9 @@ interface ModelRow {
   provider_enabled: boolean;
   provider_priority: number;
   provider_timeout_ms: number;
+  provider_health_status: "healthy" | "degraded" | "open" | null;
+  provider_circuit_open_until: string | null;
+  provider_latency_ema_ms: string | null;
 }
 
 function mapRow(row: ModelRow): RoutedModel {
@@ -35,7 +38,10 @@ function mapRow(row: ModelRow): RoutedModel {
     apiKeyCiphertext: row.provider_api_key_ciphertext,
     enabled: row.provider_enabled,
     priority: row.provider_priority,
-    timeoutMs: row.provider_timeout_ms
+    timeoutMs: row.provider_timeout_ms,
+    healthStatus: row.provider_health_status ?? "healthy",
+    circuitOpenUntil: row.provider_circuit_open_until,
+    latencyEmaMs: row.provider_latency_ema_ms === null ? null : Number(row.provider_latency_ema_ms)
   };
   const model: ModelRecord = {
     id: row.id,
@@ -67,8 +73,12 @@ const SELECT_MODELS = `
     p.enabled AS provider_enabled,
     p.priority AS provider_priority,
     p.timeout_ms AS provider_timeout_ms
+    , h.status AS provider_health_status
+    , h.circuit_open_until AS provider_circuit_open_until
+    , h.latency_ema_ms AS provider_latency_ema_ms
   FROM models m
   JOIN providers p ON p.id = m.provider_id
+  LEFT JOIN provider_health h ON h.provider_id = p.id
 `;
 
 export class CatalogRepository {
@@ -90,4 +100,3 @@ export class CatalogRepository {
     return row ? mapRow(row) : null;
   }
 }
-

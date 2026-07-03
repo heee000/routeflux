@@ -4,7 +4,7 @@ RouteFlux is an OpenAI-compatible model gateway with policy-based routing. It ke
 
 ## Current release
 
-Version 0.4 provides:
+Version 0.5 provides:
 
 - `POST /v1/chat/completions` with streaming passthrough
 - `GET /v1/models`
@@ -28,8 +28,12 @@ Version 0.4 provides:
 - provider and model configuration through encrypted administration APIs
 - production container builds and same-origin reverse proxy configuration
 - continuous integration for type checking, tests, and production builds
+- cross-provider fallback for retryable failures and timeouts
+- rolling provider latency, failure counters, and circuit breakers
+- user feedback linked to billed requests
+- an offline calibration job for model quality, difficulty capacity, and domain profiles
 
-The next release focuses on provider health, fallback execution, and data-driven calibration jobs.
+The next release focuses on per-key quotas, distributed rate limits, and broader OpenAI endpoint coverage.
 
 ## Local development
 
@@ -76,6 +80,8 @@ Automatic requests may include an optional routing policy. Standard OpenAI-compa
 
 The gateway returns the selected model, primary domain, estimated difficulty, and token budget in `x-routeflux-*` response headers. The proprietary `routing` object is removed before the request is sent upstream.
 
+Retryable HTTP responses (`408`, `409`, `425`, `429`, and `5xx`) and connection failures move to a provider-diverse fallback candidate. Three consecutive failures open a provider circuit for 30 seconds.
+
 ## First account
 
 Create a user with the `ADMIN_TOKEN`, issue a key, and add credit:
@@ -98,6 +104,27 @@ curl -X POST http://localhost:8080/admin/users/USER_ID/credits \
 ```
 
 The API key is returned only when it is created.
+
+## Routing feedback and calibration
+
+Clients can submit a score for a request they own:
+
+```json
+POST /v1/feedback
+{
+  "request_id": "request UUID from x-request-id",
+  "score": 0.9,
+  "category": "correct"
+}
+```
+
+Run calibration after enough feedback has accumulated:
+
+```bash
+npm run calibrate -- -- 20
+```
+
+The number is the minimum feedback count per model. Calibration shrinks observations toward the prior score so small samples cannot abruptly replace catalog values.
 
 ## Production containers
 

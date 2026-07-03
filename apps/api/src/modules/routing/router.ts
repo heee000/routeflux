@@ -50,6 +50,9 @@ function cosine(left: Record<string, number>, right: Record<string, number>): nu
 }
 
 function eligible(model: RoutedModel, request: RoutingRequest, tokenBudget: number): boolean {
+  if (model.provider.healthStatus === "open" && model.provider.circuitOpenUntil && new Date(model.provider.circuitOpenUntil).getTime() > Date.now()) {
+    return false;
+  }
   if (request.requiresTools && !model.supportsTools) return false;
   if (request.requiresVision && !model.supportsVision) return false;
   if (request.requiresJson && !model.supportsJson) return false;
@@ -103,7 +106,7 @@ function weights(mode: RoutingMode): { quality: number; cost: number; latency: n
 function scoreCandidate(model: RoutedModel, tokenBudget: number, mode: RoutingMode, request: RoutingRequest, features: TaskFeatures): ScoredCandidate {
   const predicted = predictQuality(model, features, tokenBudget);
   const predictedCostUsd = costUsd(model, request.promptTokensEstimate, tokenBudget);
-  const predictedLatencyMs = numberHint(model, "latencyMs", 5_000);
+  const predictedLatencyMs = model.provider.latencyEmaMs ?? numberHint(model, "latencyMs", 5_000);
   const modeWeights = weights(mode);
   const costScale = request.policy?.maxCostUsd ?? 0.02;
   const utility =
@@ -170,4 +173,3 @@ export function route(models: RoutedModel[], request: RoutingRequest): RouteDeci
     reason: `${mode} joint model-token optimization for ${features.primaryDomain}`
   };
 }
-

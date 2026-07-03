@@ -7,6 +7,9 @@ export interface ProviderRecord {
   enabled: boolean;
   priority: number;
   timeoutMs: number;
+  healthStatus: "healthy" | "degraded" | "open";
+  circuitOpenUntil: string | null;
+  latencyEmaMs: number | null;
 }
 
 export interface ModelRecord {
@@ -30,4 +33,3 @@ export interface ModelRecord {
 export interface RoutedModel extends ModelRecord {
   provider: ProviderRecord;
 }
-

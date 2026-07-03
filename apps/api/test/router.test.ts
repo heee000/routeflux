@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { RoutedModel } from "../src/modules/catalog/types.js";
 import { route } from "../src/modules/routing/router.js";
+import { fallbackCandidates } from "../src/http/routes.js";
 
 function model(overrides: Partial<RoutedModel>): RoutedModel {
   return {
@@ -27,7 +28,10 @@ function model(overrides: Partial<RoutedModel>): RoutedModel {
       apiKeyCiphertext: "encrypted",
       enabled: true,
       priority: 100,
-      timeoutMs: 60_000
+      timeoutMs: 60_000,
+      healthStatus: "healthy",
+      circuitOpenUntil: null,
+      latencyEmaMs: null
     },
     ...overrides
   };
@@ -151,5 +155,46 @@ describe("route", () => {
       requiresJson: false,
       policy: { maxCostUsd: 0.01 }
     })).toThrow("No model and token budget");
+  });
+
+  it("removes providers with an open circuit", () => {
+    const unavailable = model({
+      slug: "open-circuit",
+      provider: {
+        ...model({}).provider,
+        id: "provider-open",
+        slug: "provider-open",
+        healthStatus: "open",
+        circuitOpenUntil: new Date(Date.now() + 60_000).toISOString()
+      }
+    });
+    const healthy = model({ slug: "healthy" });
+    const decision = route([unavailable, healthy], {
+      requestedModel: "auto",
+      promptTokensEstimate: 100,
+      requiresTools: false,
+      requiresVision: false,
+      requiresJson: false
+    });
+    expect(decision.selected.slug).toBe("healthy");
+  });
+
+  it("builds a provider-diverse fallback sequence", () => {
+    const providerOne = model({}).provider;
+    const providerTwo = { ...providerOne, id: "provider-2", slug: "provider-2" };
+    const first = model({ slug: "first", metadata: { qualityScore: 0.9, latencyMs: 1000 }, provider: providerOne });
+    const sameProvider = model({ slug: "same-provider", metadata: { qualityScore: 0.85, latencyMs: 1000 }, provider: providerOne });
+    const otherProvider = model({ slug: "other-provider", metadata: { qualityScore: 0.8, latencyMs: 1000 }, provider: providerTwo });
+    const decision = route([first, sameProvider, otherProvider], {
+      requestedModel: "auto/quality",
+      promptTokensEstimate: 100,
+      requiresTools: false,
+      requiresVision: false,
+      requiresJson: false
+    });
+    const fallbacks = fallbackCandidates(decision);
+    expect(fallbacks[0]!.model.provider.id).toBe(providerOne.id);
+    expect(fallbacks[1]!.model.provider.id).toBe(providerTwo.id);
+    expect(new Set(fallbacks.map((candidate) => candidate.model.id)).size).toBe(fallbacks.length);
   });
 });
