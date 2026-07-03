@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:17-alpine
+    image: postgres:16-alpine
     environment:
       POSTGRES_USER: routeflux
       POSTGRES_PASSWORD: routeflux
@@ -31,4 +31,3 @@ services:
 volumes:
   routeflux-postgres:
   routeflux-redis:
-

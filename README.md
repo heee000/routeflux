@@ -4,7 +4,7 @@ RouteFlux is an OpenAI-compatible model gateway with policy-based routing. It ke
 
 ## Current release
 
-Version 0.1 provides:
+Version 0.2 provides:
 
 - `POST /v1/chat/completions` with streaming passthrough
 - `GET /v1/models`
@@ -13,8 +13,14 @@ Version 0.1 provides:
 - capability and context-window filtering
 - encrypted provider credentials at rest
 - PostgreSQL migrations and Docker development services
+- API-key authentication
+- USD wallet balances with transactional holds and settlement
+- append-only wallet ledger entries enforced by a database trigger
+- usage accounting for JSON and streaming responses
+- request-level cost and latency records
+- administrator endpoints for users, keys, and wallet credits
 
-Wallet accounting and learned routing are planned for the next releases.
+Learned routing and the operator console are planned for the next releases.
 
 ## Local development
 
@@ -40,6 +46,29 @@ Use a catalog model slug for explicit routing, or one of:
 - `auto/quality`
 
 `auto` is an alias for `auto/balanced`.
+
+## First account
+
+Create a user with the `ADMIN_TOKEN`, issue a key, and add credit:
+
+```bash
+curl -X POST http://localhost:8080/admin/users \
+  -H "Authorization: Bearer $ADMIN_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"email":"owner@example.com","display_name":"Owner"}'
+
+curl -X POST http://localhost:8080/admin/users/USER_ID/keys \
+  -H "Authorization: Bearer $ADMIN_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"default"}'
+
+curl -X POST http://localhost:8080/admin/users/USER_ID/credits \
+  -H "Authorization: Bearer $ADMIN_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"amount_usd":10,"reference_id":"initial-credit"}'
+```
+
+The API key is returned only when it is created.
 
 ## License
 

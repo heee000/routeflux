@@ -6,6 +6,7 @@ import type { AppConfig } from "./config.js";
 import { CatalogRepository } from "./modules/catalog/repository.js";
 import type { Database } from "./db/pool.js";
 import { registerRoutes } from "./http/routes.js";
+import { registerAdminRoutes } from "./http/admin-routes.js";
 
 export interface AppDependencies {
   config: AppConfig;
@@ -26,7 +27,7 @@ export async function buildApp(dependencies: AppDependencies): Promise<FastifyIn
   await app.register(rateLimit, { max: 120, timeWindow: "1 minute" });
 
   const catalog = new CatalogRepository(dependencies.db);
-  await registerRoutes(app, { config: dependencies.config, catalog });
+  await registerAdminRoutes(app, dependencies.config, dependencies.db);
+  await registerRoutes(app, { config: dependencies.config, catalog, db: dependencies.db });
   return app;
 }
-
