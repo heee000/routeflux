@@ -1,5 +1,7 @@
 # RouteFlux
 
+[English](README.md) | [简体中文](README_CN.md)
+
 RouteFlux is an OpenAI-compatible model gateway with policy-based routing. It keeps provider integration, routing decisions, and usage accounting separate so each can evolve without changing client applications.
 
 ## Current release
@@ -126,8 +128,10 @@ An empty `allowed_models` array permits every enabled catalog model. Rate-limit 
 
 Clients can submit a score for a request they own:
 
-```json
+```http
 POST /v1/feedback
+Content-Type: application/json
+
 {
   "request_id": "request UUID from x-request-id",
   "score": 0.9,
