@@ -87,6 +87,8 @@ function routeHeaders(
   reply.header("x-routeflux-mode", decision.mode);
   reply.header("x-routeflux-domain", decision.features.primaryDomain);
   reply.header("x-routeflux-difficulty", decision.features.difficulty.toFixed(4));
+  reply.header("x-routeflux-difficulty-tier", decision.features.difficultyTier);
+  reply.header("x-routeflux-feature-version", decision.features.featureVersion);
   reply.header("x-routeflux-token-budget", String(candidate.tokenBudget));
   if (trace) reply.header("x-routeflux-predicted-quality", candidate.predictedQuality.toFixed(5));
 }
@@ -104,7 +106,7 @@ export async function registerRoutes(app: FastifyInstance, dependencies: RouteDe
     return principal;
   };
 
-  app.get("/health", async () => ({ status: "ok", version: "0.7.0" }));
+  app.get("/health", async () => ({ status: "ok", version: "0.8.0" }));
 
   app.get("/v1/models", async (request, reply) => {
     if (!(await principalFor(request, reply))) return;

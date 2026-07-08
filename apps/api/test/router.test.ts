@@ -81,12 +81,12 @@ describe("route", () => {
   it("uses domain similarity when quality and price are comparable", () => {
     const coding = model({
       slug: "coding-specialist",
-      domains: { coding: 1 },
+      domains: { code_generation: 1 },
       metadata: { qualityScore: 0.72, difficultyCapacity: 0.85, latencyMs: 1000 }
     });
     const general = model({
       slug: "general-model",
-      domains: { general: 1 },
+      domains: { factual_qa: 1 },
       metadata: { qualityScore: 0.72, difficultyCapacity: 0.85, latencyMs: 1000 }
     });
     const decision = route([general, coding], {
@@ -96,11 +96,14 @@ describe("route", () => {
       requiresVision: false,
       requiresJson: false,
       features: {
+        featureVersion: "test-v1",
         promptTokens: 500,
         textTokens: 480,
-        domainVector: { coding: 1 },
-        primaryDomain: "coding",
+        domainVector: { code_generation: 1 },
+        primaryDomain: "code_generation",
         difficulty: 0.65,
+        difficultyTier: "REASONING",
+        difficultyDimensions: [],
         predictedOutputTokens: 1000,
         signals: ["code"]
       }
@@ -116,11 +119,14 @@ describe("route", () => {
       metadata: { qualityScore: 0.8, difficultyCapacity: 0.9, latencyMs: 1000 }
     });
     const features = {
+      featureVersion: "test-v1",
       promptTokens: 300,
       textTokens: 280,
-      domainVector: { general: 1 },
-      primaryDomain: "general",
+      domainVector: { factual_qa: 1 },
+      primaryDomain: "factual_qa",
       difficulty: 0.5,
+      difficultyTier: "COMPLEX" as const,
+      difficultyDimensions: [],
       predictedOutputTokens: 1200,
       signals: []
     };

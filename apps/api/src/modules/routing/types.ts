@@ -1,13 +1,17 @@
 import type { RoutedModel } from "../catalog/types.js";
+import type { DifficultyDimension, DifficultyTier } from "./difficulty.js";
 
 export type RoutingMode = "manual" | "economy" | "balanced" | "quality";
 
 export interface TaskFeatures {
+  featureVersion: string;
   promptTokens: number;
   textTokens: number;
   domainVector: Record<string, number>;
   primaryDomain: string;
   difficulty: number;
+  difficultyTier: DifficultyTier;
+  difficultyDimensions: DifficultyDimension[];
   predictedOutputTokens: number;
   signals: string[];
 }

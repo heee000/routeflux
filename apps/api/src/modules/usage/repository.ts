@@ -12,9 +12,10 @@ export class UsageRepository {
       `INSERT INTO request_logs (
          id, user_id, api_key_id, requested_model, selected_model_id,
          routing_mode, status, route_reason, primary_domain, difficulty,
+         routing_feature_version, domain_vector, difficulty_tier, difficulty_dimensions,
          predicted_output_tokens, selected_token_budget, predicted_quality,
          candidate_scores
-       ) VALUES ($1, $2, $3, $4, $5, $6, 'started', $7, $8, $9, $10, $11, $12, $13)`,
+       ) VALUES ($1, $2, $3, $4, $5, $6, 'started', $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)`,
       [
         requestId,
         principal.userId,
@@ -25,6 +26,10 @@ export class UsageRepository {
         decision.reason,
         decision.features.primaryDomain,
         decision.features.difficulty,
+        decision.features.featureVersion,
+        JSON.stringify(decision.features.domainVector),
+        decision.features.difficultyTier,
+        JSON.stringify(decision.features.difficultyDimensions),
         decision.features.predictedOutputTokens,
         decision.maxOutputTokens,
         decision.predictedQuality,

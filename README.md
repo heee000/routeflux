@@ -4,9 +4,11 @@
 
 RouteFlux is an OpenAI-compatible model gateway with policy-based routing. It keeps provider integration, routing decisions, and usage accounting separate so each can evolve without changing client applications.
 
+It is the productized continuation of the original DomainRouter project: the 12-domain and 14-dimension interpretable router now sits inside a multi-user API wallet, with R2-Router-inspired joint model and output-budget optimization. See the [research lineage](docs/research/README.md).
+
 ## Current release
 
-Version 0.7 provides:
+Version 0.8 provides:
 
 - `POST /v1/chat/completions` with streaming passthrough
 - `GET /v1/models`
@@ -42,6 +44,10 @@ Version 0.7 provides:
 - strict reserved-cost settlement with provider-cost shortfall auditing
 - UTF-8-safe streaming usage metering
 - diminishing quality gains for output budgets above the predicted requirement
+- the original DomainRouter 12-domain bilingual TF-IDF n-gram classifier
+- a persisted 14-dimension difficulty breakdown and four difficulty tiers
+- backward-compatible expansion of v0.7 broad domain profiles
+- research provenance and conversation handoff documentation
 
 The next release focuses on broader OpenAI endpoint coverage and automated evaluation imports.
 

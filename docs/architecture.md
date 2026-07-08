@@ -3,10 +3,11 @@
 RouteFlux separates the request path into five parts:
 
 1. The HTTP gateway validates OpenAI-compatible requests and authenticates API keys.
-2. Per-key rate, budget, and model-scope policies are enforced before provider work begins.
-3. The router filters models by hard capabilities, scores eligible model and token-budget pairs, and returns an ordered decision.
-4. The provider adapter translates the selected catalog entry into an upstream request and forwards normal or streaming responses.
-5. The accounting path reserves the maximum request charge, records observed usage, settles the hold, and appends an immutable ledger entry.
+2. The research feature layer computes the DomainRouter-derived 12-domain vector, 14-dimension difficulty breakdown, and expected output length.
+3. Per-key rate, budget, and model-scope policies are enforced before provider work begins.
+4. The router filters models by hard capabilities, scores eligible model and token-budget pairs, and returns an ordered decision.
+5. The provider adapter translates the selected catalog entry into an upstream request and forwards normal or streaming responses.
+6. The accounting path reserves the maximum request charge, records observed usage, settles the hold, and appends an immutable ledger entry.
 
 Provider failures release the hold. A completed request is charged from upstream usage when available; otherwise a conservative local token estimate is used. Amounts are stored as integer micro-dollars. Floating-point values are limited to price calculation and never used as wallet balances.
 

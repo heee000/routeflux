@@ -1,0 +1,19 @@
+{
+  "folders": [
+    { "name": "RouteFlux", "path": "." },
+    { "name": "DomainRouter (original)", "path": "../DomainRouter" },
+    { "name": "R2-Router research", "path": "../../../4" },
+    { "name": "Routing surveys", "path": "../../../5" }
+  ],
+  "settings": {
+    "files.exclude": {
+      "**/node_modules": true,
+      "**/dist": true
+    },
+    "search.exclude": {
+      "**/node_modules": true,
+      "**/dist": true,
+      "**/.git": true
+    }
+  }
+}

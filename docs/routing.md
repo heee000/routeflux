@@ -6,13 +6,15 @@ The initial router is deterministic and calibration-ready. It does not call anot
 
 Each request produces:
 
-- a normalized domain vector;
+- a normalized 12-domain vector from a local bilingual TF-IDF character n-gram classifier;
 - a primary domain;
-- a difficulty score between 0 and 1;
+- a difficulty score, four-level tier, and all 14 contributing dimensions;
 - an expected output length;
 - explicit capability requirements such as tools, vision, and JSON output.
 
-The domain vector currently covers coding, mathematics, science, business, writing, law, medicine, and general requests. Caller-supplied domain hints add weight but do not bypass capability checks.
+The canonical domains, inherited from DomainRouter, are `math_reasoning`, `code_generation`, `code_debugging`, `data_analysis`, `creative_writing`, `translation`, `factual_qa`, `summarization`, `system_design`, `instruction_following`, `multimodal`, and `agentic_task`. Caller hints add evidence but do not bypass capability checks. Legacy v0.7 model profiles using `coding`, `math`, `science`, `business`, `writing`, `law`, `medicine`, or `general` are expanded into this canonical space.
+
+Difficulty is decomposed into token count, code presence, reasoning markers, technical terms, creative markers, simple indicators, multi-step patterns, question complexity, imperative verbs, constraint count, output format, reference complexity, negation complexity, and domain specificity. The full vector and breakdown are stored with the request so later predictors can be calibrated and audited.
 
 ## Candidate generation
 

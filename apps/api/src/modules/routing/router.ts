@@ -1,4 +1,5 @@
 import type { RoutedModel } from "../catalog/types.js";
+import { expandLegacyDomainVector } from "./domain-classifier.js";
 import type {
   RouteDecision,
   RoutingMode,
@@ -15,11 +16,14 @@ const AUTO_MODES = new Map<string, RoutingMode>([
 ]);
 
 const DEFAULT_FEATURES: TaskFeatures = {
+  featureVersion: "fallback-v1",
   promptTokens: 0,
   textTokens: 0,
-  domainVector: { general: 1 },
-  primaryDomain: "general",
+  domainVector: { factual_qa: 1 },
+  primaryDomain: "factual_qa",
   difficulty: 0.3,
+  difficultyTier: "COMPLEX",
+  difficultyDimensions: [],
   predictedOutputTokens: 768,
   signals: []
 };
@@ -85,7 +89,7 @@ function predictQuality(model: RoutedModel, features: TaskFeatures, tokenBudget:
 } {
   const baseQuality = numberHint(model, "qualityScore", 0.55);
   const difficultyCapacity = numberHint(model, "difficultyCapacity", baseQuality);
-  const domainSimilarity = cosine(features.domainVector, model.domains);
+  const domainSimilarity = cosine(features.domainVector, expandLegacyDomainVector(model.domains));
   const required = Math.max(64, features.predictedOutputTokens * numberHint(model, "outputLengthMultiplier", 1));
   const tokenRatio = tokenBudget / required;
   const adequacy = clamp(tokenRatio);
