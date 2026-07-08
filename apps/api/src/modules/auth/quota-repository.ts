@@ -8,13 +8,6 @@ export interface RateLimitResult {
   resetEpochSeconds: number;
 }
 
-export interface BudgetResult {
-  allowed: boolean;
-  spentMicroUsd: number;
-  limitMicroUsd: number | null;
-  reason?: "monthly_budget" | "max_request" | undefined;
-}
-
 export class QuotaRepository {
   constructor(private readonly db: Database) {}
 
@@ -34,37 +27,6 @@ export class QuotaRepository {
       limit: principal.requestsPerMinute,
       remaining: Math.max(0, principal.requestsPerMinute - count),
       resetEpochSeconds: Number(result.rows[0]!.reset_epoch)
-    };
-  }
-
-  async checkBudget(principal: Principal, predictedMicroUsd: number): Promise<BudgetResult> {
-    if (principal.maxRequestMicroUsd !== null && predictedMicroUsd > principal.maxRequestMicroUsd) {
-      return {
-        allowed: false,
-        spentMicroUsd: 0,
-        limitMicroUsd: principal.maxRequestMicroUsd,
-        reason: "max_request"
-      };
-    }
-    if (principal.monthlyBudgetMicroUsd === null) {
-      return { allowed: true, spentMicroUsd: 0, limitMicroUsd: null };
-    }
-    const result = await this.db.query<{ spent: string }>(
-      `SELECT COALESCE(sum(cost_micro_usd), 0) AS spent
-       FROM request_logs
-       WHERE api_key_id = $1
-         AND status = 'succeeded'
-         AND created_at >= date_trunc('month', now())`,
-      [principal.apiKeyId]
-    );
-    const spentMicroUsd = Number(result.rows[0]!.spent);
-    return {
-      allowed: spentMicroUsd + predictedMicroUsd <= principal.monthlyBudgetMicroUsd,
-      spentMicroUsd,
-      limitMicroUsd: principal.monthlyBudgetMicroUsd,
-      ...(spentMicroUsd + predictedMicroUsd > principal.monthlyBudgetMicroUsd
-        ? { reason: "monthly_budget" as const }
-        : {})
     };
   }
 

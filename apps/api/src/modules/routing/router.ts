@@ -87,12 +87,17 @@ function predictQuality(model: RoutedModel, features: TaskFeatures, tokenBudget:
   const difficultyCapacity = numberHint(model, "difficultyCapacity", baseQuality);
   const domainSimilarity = cosine(features.domainVector, model.domains);
   const required = Math.max(64, features.predictedOutputTokens * numberHint(model, "outputLengthMultiplier", 1));
-  const adequacy = clamp(tokenBudget / required);
+  const tokenRatio = tokenBudget / required;
+  const adequacy = clamp(tokenRatio);
   const difficultyPenalty = Math.max(0, features.difficulty - difficultyCapacity) * 0.48;
   const tokenPenalty = (1 - adequacy) * (0.24 + features.difficulty * 0.18);
+  const tokenGain = numberHint(model, "tokenGain", 0.08 + features.difficulty * 0.06);
+  const tokenBonus = tokenRatio > 1
+    ? tokenGain * (1 - Math.exp(-(tokenRatio - 1) * 2))
+    : 0;
   const domainAdjustment = (domainSimilarity - 0.5) * 0.18;
   return {
-    quality: clamp(baseQuality + domainAdjustment - difficultyPenalty - tokenPenalty, 0.01, 0.99),
+    quality: clamp(baseQuality + domainAdjustment - difficultyPenalty - tokenPenalty + tokenBonus, 0.01, 0.99),
     domainSimilarity
   };
 }

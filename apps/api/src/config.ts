@@ -15,7 +15,6 @@ const envSchema = z.object({
   PORT: z.coerce.number().int().min(1).max(65535).default(8080),
   LOG_LEVEL: z.string().default("info"),
   DATABASE_URL: z.string().min(1),
-  REDIS_URL: z.string().default("redis://localhost:6379"),
   MASTER_KEY: z.string().min(1),
   ADMIN_TOKEN: z.string().min(16),
   BOOTSTRAP_PROVIDER_NAME: optionalText,

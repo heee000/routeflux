@@ -104,7 +104,7 @@ export async function registerRoutes(app: FastifyInstance, dependencies: RouteDe
     return principal;
   };
 
-  app.get("/health", async () => ({ status: "ok", version: "0.6.0" }));
+  app.get("/health", async () => ({ status: "ok", version: "0.7.0" }));
 
   app.get("/v1/models", async (request, reply) => {
     if (!(await principalFor(request, reply))) return;
@@ -232,23 +232,29 @@ export async function registerRoutes(app: FastifyInstance, dependencies: RouteDe
     const reservationMicroUsd = Math.max(...candidates.map((candidate) => {
       return calculateCharge(candidate.model, reservationPromptTokens, candidate.tokenBudget).costMicroUsd;
     }), 1);
-    const budget = await quotas.checkBudget(principal, reservationMicroUsd);
-    if (!budget.allowed) {
-      return reply.code(402).send({
-        error: {
-          message: budget.reason === "max_request"
-            ? "Predicted request cost exceeds the API key limit"
-            : "API key monthly budget exceeded",
-          type: "quota_exceeded",
-          limit_usd: budget.limitMicroUsd === null ? null : microUsdToUsd(budget.limitMicroUsd),
-          spent_usd: microUsdToUsd(budget.spentMicroUsd)
-        }
-      });
-    }
-    const hasFunds = await wallets.reserve(principal.walletId, requestId, reservationMicroUsd);
-    if (!hasFunds) {
+    const reservation = await wallets.reserve({
+      walletId: principal.walletId,
+      apiKeyId: principal.apiKeyId,
+      requestId,
+      amountMicroUsd: reservationMicroUsd
+    });
+    if (!reservation.ok && reservation.reason === "insufficient_balance") {
       return reply.code(402).send({
         error: { message: "Insufficient wallet balance", type: "insufficient_balance" }
+      });
+    }
+    if (!reservation.ok) {
+      return reply.code(reservation.reason === "wallet_not_found" ? 404 : 402).send({
+        error: {
+          message: reservation.reason === "max_request"
+            ? "Predicted request cost exceeds the API key limit"
+            : reservation.reason === "monthly_budget"
+              ? "API key monthly budget exceeded"
+              : "Wallet not found",
+          type: reservation.reason === "wallet_not_found" ? "not_found" : "quota_exceeded",
+          limit_usd: reservation.limitMicroUsd === null ? null : microUsdToUsd(reservation.limitMicroUsd),
+          committed_usd: microUsdToUsd(reservation.committedMicroUsd)
+        }
       });
     }
 
@@ -273,17 +279,20 @@ export async function registerRoutes(app: FastifyInstance, dependencies: RouteDe
       if (finalized) return;
       finalized = true;
       const charge = calculateCharge(finalCandidate.model, tokens.promptTokens, tokens.completionTokens);
-      await wallets.settle(requestId, charge.costMicroUsd, {
+      const settlement = await wallets.settle(requestId, charge.costMicroUsd, {
         model: finalCandidate.model.slug,
         prompt_tokens: tokens.promptTokens,
         completion_tokens: tokens.completionTokens,
         fallback_count: Math.max(0, attempts.length - 1)
       });
+      const billedCharge = { ...charge, costMicroUsd: settlement.chargedMicroUsd };
       if (streamFailed) {
         await usageLogs.failCharged(
           requestId,
           "stream_error",
-          charge,
+          billedCharge,
+          settlement.requestedMicroUsd,
+          settlement.shortfallMicroUsd,
           Date.now() - startedAt,
           finalCandidate.model.id,
           attempts
@@ -291,7 +300,9 @@ export async function registerRoutes(app: FastifyInstance, dependencies: RouteDe
       } else {
         await usageLogs.succeed(
           requestId,
-          charge,
+          billedCharge,
+          settlement.requestedMicroUsd,
+          settlement.shortfallMicroUsd,
           Date.now() - startedAt,
           finalCandidate.model.id,
           attempts

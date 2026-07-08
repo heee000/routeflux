@@ -6,7 +6,7 @@ RouteFlux is an OpenAI-compatible model gateway with policy-based routing. It ke
 
 ## Current release
 
-Version 0.6 provides:
+Version 0.7 provides:
 
 - `POST /v1/chat/completions` with streaming passthrough
 - `GET /v1/models`
@@ -37,6 +37,11 @@ Version 0.6 provides:
 - per-key request-per-minute limits shared across API instances
 - per-key monthly budgets and maximum predicted request cost
 - model allowlists applied before manual or automatic routing
+- atomic API-key budget reservation across concurrent gateway instances
+- automatic recovery of expired wallet holds
+- strict reserved-cost settlement with provider-cost shortfall auditing
+- UTF-8-safe streaming usage metering
+- diminishing quality gains for output budgets above the predicted requirement
 
 The next release focuses on broader OpenAI endpoint coverage and automated evaluation imports.
 
@@ -122,7 +127,7 @@ Key creation also accepts optional controls:
 }
 ```
 
-An empty `allowed_models` array permits every enabled catalog model. Rate-limit responses include remaining and reset headers. Budget limits are evaluated before wallet reservation or provider execution.
+An empty `allowed_models` array permits every enabled catalog model. Rate-limit responses include remaining and reset headers. Budget checks and wallet reservation are one atomic PostgreSQL transaction, so concurrent requests cannot independently spend the same key budget.
 
 ## Routing feedback and calibration
 

@@ -1,4 +1,5 @@
 import { Transform, type TransformCallback } from "node:stream";
+import { StringDecoder } from "node:string_decoder";
 import { estimateTextTokens } from "../routing/estimate.js";
 
 export interface TokenUsage {
@@ -28,7 +29,18 @@ export function usageFromJson(body: string, promptFallback: number): TokenUsage 
         if (!choice || typeof choice !== "object") return "";
         const message = (choice as Record<string, unknown>).message;
         if (!message || typeof message !== "object") return "";
-        return JSON.stringify(message);
+        const record = message as Record<string, unknown>;
+        let generated = "";
+        if (typeof record.content === "string") generated += record.content;
+        if (Array.isArray(record.content)) {
+          generated += record.content.map((part) => {
+            if (!part || typeof part !== "object") return "";
+            const text = (part as Record<string, unknown>).text;
+            return typeof text === "string" ? text : "";
+          }).join("");
+        }
+        if (record.tool_calls) generated += JSON.stringify(record.tool_calls);
+        return generated;
       })
       .join("");
     return { promptTokens: promptFallback, completionTokens: estimateTextTokens(text) };
@@ -45,6 +57,7 @@ export function createUsageMeter(
   let pending = "";
   let generated = "";
   let reported: TokenUsage | null = null;
+  const decoder = new StringDecoder("utf8");
 
   const parseLine = (line: string): void => {
     if (!line.startsWith("data:")) return;
@@ -70,13 +83,14 @@ export function createUsageMeter(
   return new Transform({
     transform(chunk: Buffer, _encoding: BufferEncoding, callback: TransformCallback) {
       this.push(chunk);
-      pending += chunk.toString("utf8");
+      pending += decoder.write(chunk);
       const lines = pending.split(/\r?\n/);
       pending = lines.pop() ?? "";
       lines.forEach(parseLine);
       callback();
     },
     flush(callback: TransformCallback) {
+      pending += decoder.end();
       if (pending) parseLine(pending);
       const usage = reported ?? {
         promptTokens: promptFallback,

@@ -27,7 +27,8 @@ The baseline quality estimate combines:
 - the model's calibrated base quality;
 - cosine similarity between request and model domain vectors;
 - mismatch between request difficulty and model difficulty capacity;
-- the expected quality loss when the token cap is below the predicted requirement.
+- the expected quality loss when the token cap is below the predicted requirement;
+- a diminishing quality gain when the cap is above the predicted requirement.
 
 Model metadata accepts these calibration fields:
 
@@ -36,7 +37,8 @@ Model metadata accepts these calibration fields:
   "qualityScore": 0.78,
   "difficultyCapacity": 0.82,
   "latencyMs": 2400,
-  "outputLengthMultiplier": 1.1
+  "outputLengthMultiplier": 1.1,
+  "tokenGain": 0.1
 }
 ```
 
@@ -54,4 +56,4 @@ Production calibration uses task-level evaluation labels rather than aggregate m
 
 Domain similarity and difficulty are features, not labels. They should influence a model only when evaluation data shows that the model performs differently along those dimensions.
 
-The current job updates base quality, difficulty capacity, and observed domain scores. Every run is recorded in `calibration_runs`. Output-length curve fitting remains separate because it requires prompts with uncapped or high-cap reference generations.
+The current job updates base quality, difficulty capacity, and observed domain scores. Every run is recorded in `calibration_runs`. `tokenGain` controls the saturating output-length curve and can be fitted later from prompts with uncapped or high-cap reference generations.

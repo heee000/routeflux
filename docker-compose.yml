@@ -15,19 +15,6 @@ services:
       timeout: 5s
       retries: 10
 
-  redis:
-    image: redis:7-alpine
-    ports:
-      - "6379:6379"
-    command: redis-server --appendonly yes
-    volumes:
-      - routeflux-redis:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-
   api:
     profiles: ["app"]
     build:
@@ -38,7 +25,6 @@ services:
       HOST: 0.0.0.0
       PORT: 8080
       DATABASE_URL: postgres://routeflux:routeflux@postgres:5432/routeflux
-      REDIS_URL: redis://redis:6379
       MASTER_KEY: ${MASTER_KEY:?MASTER_KEY is required}
       ADMIN_TOKEN: ${ADMIN_TOKEN:?ADMIN_TOKEN is required}
       BOOTSTRAP_PROVIDER_NAME: ${BOOTSTRAP_PROVIDER_NAME:-}
@@ -47,8 +33,6 @@ services:
       BOOTSTRAP_PROVIDER_MODELS: ${BOOTSTRAP_PROVIDER_MODELS:-}
     depends_on:
       postgres:
-        condition: service_healthy
-      redis:
         condition: service_healthy
     ports:
       - "8080:8080"
@@ -67,4 +51,3 @@ services:
 
 volumes:
   routeflux-postgres:
-  routeflux-redis:

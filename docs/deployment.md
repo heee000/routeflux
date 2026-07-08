@@ -10,10 +10,9 @@ Generate secrets with a cryptographically secure random source. Do not commit `.
 
 ## Container deployment
 
-The application profile contains four services:
+The application profile contains three services:
 
 - `postgres`: authoritative state and ledger;
-- `redis`: distributed runtime cache and rate-limit dependency reserved for the next release;
 - `api`: gateway, router, billing, and administration API;
 - `web`: static console and reverse proxy.
 
@@ -38,4 +37,6 @@ After a deployment:
 3. issue one manual-model request and one `auto/balanced` request;
 4. confirm the wallet hold returns to zero;
 5. confirm request and ledger entries contain the same cost and request identifier.
+
+If `billing_shortfall_micro_usd` is non-zero, the provider reported a cost above the amount authorized before execution. RouteFlux charges only the authorized hold and preserves the provider cost separately for operator review.
 

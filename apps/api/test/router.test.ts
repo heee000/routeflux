@@ -141,7 +141,8 @@ describe("route", () => {
       features
     });
     expect(economy.maxOutputTokens).toBeLessThan(quality.maxOutputTokens);
-    expect(quality.maxOutputTokens).toBe(1200);
+    expect(economy.maxOutputTokens).toBeLessThan(features.predictedOutputTokens);
+    expect(quality.maxOutputTokens).toBeGreaterThan(features.predictedOutputTokens);
   });
 
   it("enforces caller cost constraints", () => {

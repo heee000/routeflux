@@ -16,7 +16,7 @@ Provider failures release the hold. A completed request is charged from upstream
 - `models` stores capabilities, prices, domain profiles, and calibration metadata.
 - `users`, `api_keys`, and `wallets` own access and funds.
 - `api_key_rate_windows` provides atomic shared rate windows across API instances.
-- `wallet_holds` prevents concurrent requests from overspending one balance.
+- `wallet_holds` atomically reserves both wallet funds and per-key monthly budget. Expired holds are reclaimed when the wallet is read or reused.
 - `wallet_ledger_entries` is append-only. PostgreSQL rejects updates and deletes.
 - `request_logs` contains routing features, candidate scores, measured usage, latency, and cost.
 
@@ -33,4 +33,4 @@ authenticate
   -> append ledger and complete request log
 ```
 
-The API process is stateless. PostgreSQL is authoritative for catalog, identity, wallet, and audit state. Redis is reserved for distributed rate limits, health snapshots, and short-lived routing caches in a later release.
+The API process is stateless. PostgreSQL is authoritative for catalog, identity, distributed rate limits, wallet, and audit state. A separate cache is intentionally not required on the current request path.

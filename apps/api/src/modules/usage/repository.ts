@@ -44,6 +44,8 @@ export class UsageRepository {
   async succeed(
     requestId: string,
     usage: UsageCharge,
+    providerCostMicroUsd: number,
+    billingShortfallMicroUsd: number,
     latencyMs: number,
     selectedModelId: string,
     attempts: ProviderAttempt[]
@@ -51,13 +53,16 @@ export class UsageRepository {
     await this.db.query(
       `UPDATE request_logs SET
          status = 'succeeded', prompt_tokens = $1, completion_tokens = $2,
-         cost_micro_usd = $3, latency_ms = $4, selected_model_id = $5,
-         provider_attempts = $6, fallback_count = $7, completed_at = now()
-       WHERE id = $8`,
+         cost_micro_usd = $3, provider_cost_micro_usd = $4,
+         billing_shortfall_micro_usd = $5, latency_ms = $6, selected_model_id = $7,
+         provider_attempts = $8, fallback_count = $9, completed_at = now()
+       WHERE id = $10`,
       [
         usage.promptTokens,
         usage.completionTokens,
         usage.costMicroUsd,
+        providerCostMicroUsd,
+        billingShortfallMicroUsd,
         latencyMs,
         selectedModelId,
         JSON.stringify(attempts),
@@ -80,6 +85,8 @@ export class UsageRepository {
     requestId: string,
     errorCode: string,
     usage: UsageCharge,
+    providerCostMicroUsd: number,
+    billingShortfallMicroUsd: number,
     latencyMs: number,
     selectedModelId: string,
     attempts: ProviderAttempt[]
@@ -87,14 +94,17 @@ export class UsageRepository {
     await this.db.query(
       `UPDATE request_logs SET status = 'failed', error_code = $1,
          prompt_tokens = $2, completion_tokens = $3, cost_micro_usd = $4,
-         latency_ms = $5, selected_model_id = $6, provider_attempts = $7,
-         fallback_count = $8, completed_at = now()
-       WHERE id = $9`,
+         provider_cost_micro_usd = $5, billing_shortfall_micro_usd = $6,
+         latency_ms = $7, selected_model_id = $8, provider_attempts = $9,
+         fallback_count = $10, completed_at = now()
+       WHERE id = $11`,
       [
         errorCode,
         usage.promptTokens,
         usage.completionTokens,
         usage.costMicroUsd,
+        providerCostMicroUsd,
+        billingShortfallMicroUsd,
         latencyMs,
         selectedModelId,
         JSON.stringify(attempts),
