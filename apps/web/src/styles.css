@@ -34,6 +34,23 @@ button:hover { filter: brightness(.96); }
 button:disabled { cursor: not-allowed; opacity: .5; }
 button.secondary, .table-button { color: #3f4841; background: #eef0eb; border: 1px solid #d9ddd6; }
 .header-actions, .row-actions { display: flex; gap: 8px; align-items: center; }
+.language-menu { position: relative; }
+.language-button { display: inline-flex; align-items: center; gap: 8px; min-height: 38px; padding: 6px 10px 6px 7px; color: #3f4841; background: #fff; border: 1px solid #dfe4da; border-radius: 999px; box-shadow: 0 1px 1px rgba(19, 27, 20, .03); font-size: 12px; font-weight: 700; }
+.language-button:hover, .language-menu.open .language-button { filter: none; color: #22311f; background: #f8fbf4; border-color: #c9d8bd; }
+.language-button:focus-visible, .language-option:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(150, 201, 85, .22); }
+.language-glyph { width: 25px; height: 25px; display: grid; grid-template-columns: 1fr 1fr; place-items: center; border-radius: 999px; color: #315d28; background: #e7f3df; font-size: 10px; letter-spacing: -.03em; }
+.language-glyph span:last-child { color: #59645a; font-size: 11px; }
+.language-button-text { white-space: nowrap; }
+.language-chevron { color: #8a928b; font-size: 10px; transition: transform .16s ease; }
+.language-chevron.open { transform: rotate(180deg); }
+.language-popover { position: absolute; top: calc(100% + 8px); right: 0; z-index: 30; width: 194px; padding: 6px; border: 1px solid #dfe4da; border-radius: 12px; background: #fff; box-shadow: 0 18px 45px rgba(19, 27, 20, .14); }
+.language-popover::before { content: ""; position: absolute; top: -5px; right: 22px; width: 9px; height: 9px; background: #fff; border-left: 1px solid #dfe4da; border-top: 1px solid #dfe4da; transform: rotate(45deg); }
+.language-option { position: relative; z-index: 1; width: 100%; display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 12px; padding: 10px; color: #4b554d; background: transparent; border-radius: 9px; text-align: left; }
+.language-option:hover, .language-option.active { filter: none; color: #20301f; background: #f0f5eb; }
+.language-option strong, .language-option small { display: block; }
+.language-option strong { font-size: 12px; }
+.language-option small { margin-top: 3px; color: #8a928b; font-size: 10px; font-weight: 600; }
+.language-check { display: grid; place-items: center; width: 18px; height: 18px; border-radius: 999px; color: #315d28; background: #dff1d5; font-size: 11px; }
 
 .metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-bottom: 18px; }
 .metrics article, .panel { background: #fff; border: 1px solid #e0e3dd; border-radius: 12px; box-shadow: 0 1px 1px rgba(19, 27, 20, .03); }
@@ -81,10 +98,14 @@ td small { margin-top: 3px; color: #8a928b; }
 
 .login-shell { min-height: 100vh; display: grid; place-items: center; padding: 24px; background: #101411; }
 .login-card { width: min(410px, 100%); padding: 36px; border-radius: 15px; background: #f8f9f6; }
+.login-card-top { display: flex; justify-content: space-between; align-items: start; gap: 16px; margin-bottom: 28px; }
 .login-card .mark { margin-bottom: 28px; }
+.login-card-top .mark { margin-bottom: 0; }
 .login-card h1 { margin-bottom: 10px; }
 .login-card p { margin-bottom: 25px; color: #697169; font-size: 13px; line-height: 1.6; }
 .login-card button { width: 100%; margin-top: 18px; padding: 11px; }
+.login-card .language-button { width: auto; margin-top: 0; padding: 6px 10px 6px 7px; }
+.login-card .language-option { margin-top: 0; padding: 10px; }
 
 label { display: grid; gap: 7px; color: #525b53; font-size: 12px; font-weight: 600; }
 input, select { width: 100%; padding: 10px 11px; border: 1px solid #d5dad2; border-radius: 7px; color: #202920; background: #fff; outline: none; }
@@ -108,6 +129,8 @@ input:focus, select:focus { border-color: #7ea845; box-shadow: 0 0 0 3px rgba(15
 
 @media (max-width: 680px) {
   .workspace { padding: 22px 15px 50px; }
+  header { align-items: flex-start; flex-direction: column; gap: 12px; }
+  .header-actions { width: 100%; justify-content: flex-end; }
   .app-shell { display: block; }
   aside { position: static; width: 100%; height: auto; padding: 12px; flex-direction: row; align-items: center; overflow-x: auto; }
   .brand { padding: 0 12px 0 0; }
